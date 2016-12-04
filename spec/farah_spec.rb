@@ -5,8 +5,8 @@ module Runners
 
   class Foo < Farah::Runner
     def bar(sym)
-      success('success') if sym == :bar
-      failure('failure')
+      success!('success!') if sym == :bar
+      failure!('failure!')
     end
 
     def qux(value)
@@ -26,15 +26,7 @@ class Controller
   end
 
   def call(value)
-    run(Foo, :bar, value)
-  end
-
-  def on_bar_success(payload)
-    @success = payload
-  end
-
-  def on_bar_failure(payload)
-    @failure = payload
+    start(Foo, :bar, value)
   end
 end
 
@@ -43,11 +35,11 @@ describe 'Farah::Helpers' do
     @controller = Controller.new
   end
 
-  describe '#run' do
+  describe '#start' do
     it 'calls action on runner with value' do
       value = '123'
 
-      assert_equal @controller.run(Runners::Foo, :qux, value), value
+      assert_equal @controller.start(Runners::Foo, :qux, value), value
     end
   end
 end
@@ -57,38 +49,26 @@ describe 'Farah::Runner' do
     @controller = Controller.new
   end
 
-  describe '#success' do
-    it 'sends payload to callback' do
-      @controller.call(:bar)
+  describe '#success!' do
+    it 'sends payload with result' do
+      result = @controller.call(:bar)
 
-      assert_equal @controller.success, 'success'
-    end
-
-    it 'returns early' do
-      @controller.call(:bar)
-
-      assert_equal @controller.success, 'success'
-      assert_nil   @controller.failure
+      assert       result.success?
+      assert_equal result.payload, 'success!'
     end
   end
 
-  describe '#failure' do
+  describe '#failure!' do
     def @controller.bar
-      failure!('failure') unless sym == :bar
-      success!('success')
+      failure!('failure!') unless sym == :bar
+      success!('success!')
     end
 
-    it 'sends payload to callback' do
-      @controller.call(:bat)
+    it 'sends payload with result' do
+      result = @controller.call(:baz)
 
-      assert_equal @controller.failure, 'failure'
-    end
-
-    it 'returns early' do
-      @controller.call(:baz)
-
-      assert_nil   @controller.success
-      assert_equal @controller.failure, 'failure'
+      assert       result.failure?
+      assert_equal result.payload, 'failure!'
     end
   end
 end
